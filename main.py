@@ -5,49 +5,48 @@ import re
 def read_file(path):
     with open(os.getcwd() + path, "r") as file:
         content = file.read()
-        # Get content inside """
-        pattern = r'UIML.*"""(.*)"""'
 
-        matches = re.findall(pattern, content, re.DOTALL)
+    # Get content inside """
+    pattern = r'UIML.*"""(.*)"""'
+
+    matches = re.findall(pattern, content, re.DOTALL)
+    if matches:
         text = " ".join(matches[0].split())
 
         return text
+
+    return ""
 
 
 def main():
     text = read_file("/src/main.py")
 
-    flag = "unknown"
     tag = ""
-    is_close = False
-    name = ""
+    is_open_tag = False
 
-    text_length = len(text)
-    for idx, char in enumerate(text):
-        next_char = text[idx + 1] if idx < text_length - 1 else None
-
-        if is_close:
-            is_close = False
+    for char in text:
+        if char == "<":
+            is_open_tag = True
             continue
 
-        if flag == "unknown" and char == "<":
-            flag = "close" if next_char == "/" else "open"
+        if is_open_tag:
+            if char == ">":
+                is_open_tag = False
 
-        if flag != "unknown" and next_char == ">":
-            if char == "/":
-                flag = "au_close"
-                tag += "/>"
+                tag_type = None
+                if tag.startswith("/"):
+                    tag_type = "close"
+                elif tag.endswith("/"):
+                    tag_type = "au_close"
+                else:
+                    tag_type = "open"
+
+                name = tag.split(" ")[0]
+
+                print(tag_type, name, "<" + tag + ">")
+                tag = ""
             else:
-                tag += char + ">"
-
-            print(flag, tag)
-            flag = "unknown"
-            tag = ""
-
-            is_close = True
-            continue
-
-        tag += char
+                tag += char
 
 
 if __name__ == "__main__":
